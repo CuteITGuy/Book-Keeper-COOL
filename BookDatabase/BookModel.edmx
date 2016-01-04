@@ -1,0 +1,632 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+      <Schema Namespace="BookManagementModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+        <EntityType Name="Author">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Name" Type="nvarchar" MaxLength="50" Nullable="false" />
+        </EntityType>
+        <EntityType Name="BookAuthors">
+          <Key>
+            <PropertyRef Name="Isbn" />
+            <PropertyRef Name="Author_Id" />
+          </Key>
+          <Property Name="Isbn" Type="nvarchar" MaxLength="13" Nullable="false" />
+          <Property Name="Author_Id" Type="int" Nullable="false" />
+        </EntityType>
+        <EntityType Name="BookEdition">
+          <Key>
+            <PropertyRef Name="Isbn" />
+          </Key>
+          <Property Name="Isbn" Type="nvarchar" MaxLength="13" Nullable="false" />
+          <Property Name="Title_Id" Type="int" Nullable="false" />
+          <Property Name="Edition" Type="smallint" />
+          <Property Name="Year" Type="smallint" />
+          <Property Name="Rating" Type="smallmoney" />
+          <Property Name="Review" Type="smallint" />
+          <Property Name="Price" Type="smallmoney" />
+          <Property Name="AmazonUrl" Type="varchar" MaxLength="512" />
+        </EntityType>
+        <EntityType Name="BookItem">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Isbn" Type="nvarchar" MaxLength="13" Nullable="false" />
+          <Property Name="EbookType_Id" Type="smallint" Nullable="false" />
+          <Property Name="FilePath" Type="nvarchar" MaxLength="512" Nullable="false" />
+        </EntityType>
+        <EntityType Name="BookTitle">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Title" Type="nvarchar" MaxLength="128" Nullable="false" />
+          <Property Name="BookTopic_Id" Type="smallint" Nullable="false" />
+        </EntityType>
+        <EntityType Name="BookTopic">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="smallint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Topic" Type="nvarchar" MaxLength="64" Nullable="false" />
+          <Property Name="SuperTopic_Id" Type="smallint" />
+          <Property Name="FolderPath" Type="nvarchar" MaxLength="256" Nullable="false" />
+        </EntityType>
+        <EntityType Name="EbookType">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="smallint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Type" Type="nvarchar" MaxLength="5" Nullable="false" />
+        </EntityType>
+        <Association Name="FK_BookAuthors_Author">
+          <End Role="Author" Type="Self.Author" Multiplicity="1" />
+          <End Role="BookAuthors" Type="Self.BookAuthors" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Author">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="BookAuthors">
+              <PropertyRef Name="Author_Id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BookAuthors_BookEdition">
+          <End Role="BookEdition" Type="Self.BookEdition" Multiplicity="1" />
+          <End Role="BookAuthors" Type="Self.BookAuthors" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="BookEdition">
+              <PropertyRef Name="Isbn" />
+            </Principal>
+            <Dependent Role="BookAuthors">
+              <PropertyRef Name="Isbn" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BookEdition_BookTitle">
+          <End Role="BookTitle" Type="Self.BookTitle" Multiplicity="1" />
+          <End Role="BookEdition" Type="Self.BookEdition" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="BookTitle">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="BookEdition">
+              <PropertyRef Name="Title_Id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BookItem_BookEdition">
+          <End Role="BookEdition" Type="Self.BookEdition" Multiplicity="1" />
+          <End Role="BookItem" Type="Self.BookItem" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="BookEdition">
+              <PropertyRef Name="Isbn" />
+            </Principal>
+            <Dependent Role="BookItem">
+              <PropertyRef Name="Isbn" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BookItem_EbookType">
+          <End Role="EbookType" Type="Self.EbookType" Multiplicity="1" />
+          <End Role="BookItem" Type="Self.BookItem" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="EbookType">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="BookItem">
+              <PropertyRef Name="EbookType_Id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BookTitle_BookTopic">
+          <End Role="BookTopic" Type="Self.BookTopic" Multiplicity="1" />
+          <End Role="BookTitle" Type="Self.BookTitle" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="BookTopic">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="BookTitle">
+              <PropertyRef Name="BookTopic_Id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BookTopic_BookTopic">
+          <End Role="BookTopic" Type="Self.BookTopic" Multiplicity="0..1" />
+          <End Role="BookTopic1" Type="Self.BookTopic" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="BookTopic">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="BookTopic1">
+              <PropertyRef Name="SuperTopic_Id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Function Name="DeleteAuthor" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="id" Type="int" Mode="In" />
+        </Function>
+        <Function Name="DeleteBookEdition" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="isbn" Type="nvarchar" Mode="In" />
+        </Function>
+        <Function Name="DeleteBookItem" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="id" Type="int" Mode="In" />
+        </Function>
+        <Function Name="DeleteBookTitle" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="id" Type="int" Mode="In" />
+        </Function>
+        <Function Name="DeleteBookTopic" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="id" Type="smallint" Mode="In" />
+        </Function>
+        <Function Name="DeleteEbookType" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="id" Type="smallint" Mode="In" />
+        </Function>
+        <Function Name="InsertAuthor" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="name" Type="nvarchar" Mode="In" />
+        </Function>
+        <Function Name="InsertBookEdition" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="isbn" Type="nvarchar" Mode="In" />
+          <Parameter Name="titleId" Type="int" Mode="In" />
+          <Parameter Name="edition" Type="smallint" Mode="In" />
+          <Parameter Name="year" Type="smallint" Mode="In" />
+          <Parameter Name="rating" Type="smallmoney" Mode="In" />
+          <Parameter Name="review" Type="smallint" Mode="In" />
+          <Parameter Name="amazonUrl" Type="varchar" Mode="In" />
+        </Function>
+        <Function Name="InsertBookItem" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="isbn" Type="nvarchar" Mode="In" />
+          <Parameter Name="ebookTypeId" Type="smallint" Mode="In" />
+          <Parameter Name="filePath" Type="nvarchar" Mode="In" />
+        </Function>
+        <Function Name="InsertBookTitle" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="title" Type="nvarchar" Mode="In" />
+          <Parameter Name="bookTopicId" Type="smallint" Mode="In" />
+        </Function>
+        <Function Name="InsertBookTopic" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="topic" Type="nvarchar" Mode="In" />
+          <Parameter Name="superTopicId" Type="smallint" Mode="In" />
+          <Parameter Name="folderPath" Type="nvarchar" Mode="In" />
+        </Function>
+        <Function Name="InsertEbookType" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="type" Type="nvarchar" Mode="In" />
+        </Function>
+        <Function Name="UpdateAuthor" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="id" Type="int" Mode="In" />
+          <Parameter Name="name" Type="nvarchar" Mode="In" />
+        </Function>
+        <Function Name="UpdateBookEdition" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="isbn" Type="nvarchar" Mode="In" />
+          <Parameter Name="titleId" Type="int" Mode="In" />
+          <Parameter Name="edition" Type="smallint" Mode="In" />
+          <Parameter Name="year" Type="smallint" Mode="In" />
+          <Parameter Name="rating" Type="smallmoney" Mode="In" />
+          <Parameter Name="review" Type="smallint" Mode="In" />
+          <Parameter Name="amazonUrl" Type="varchar" Mode="In" />
+        </Function>
+        <Function Name="UpdateBookItem" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="id" Type="int" Mode="In" />
+          <Parameter Name="isbn" Type="nvarchar" Mode="In" />
+          <Parameter Name="ebookTypeId" Type="smallint" Mode="In" />
+          <Parameter Name="filePath" Type="nvarchar" Mode="In" />
+        </Function>
+        <Function Name="UpdateBookTitle" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="id" Type="int" Mode="In" />
+          <Parameter Name="title" Type="nvarchar" Mode="In" />
+          <Parameter Name="bookTopicId" Type="smallint" Mode="In" />
+        </Function>
+        <Function Name="UpdateBookTopic" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="id" Type="smallint" Mode="In" />
+          <Parameter Name="topic" Type="nvarchar" Mode="In" />
+          <Parameter Name="superTopicId" Type="smallint" Mode="In" />
+          <Parameter Name="folderPath" Type="nvarchar" Mode="In" />
+        </Function>
+        <Function Name="UpdateEbookType" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="id" Type="smallint" Mode="In" />
+          <Parameter Name="type" Type="nvarchar" Mode="In" />
+        </Function>
+        <EntityContainer Name="BookManagementModelStoreContainer">
+          <EntitySet Name="Author" EntityType="Self.Author" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="BookAuthors" EntityType="Self.BookAuthors" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="BookEdition" EntityType="Self.BookEdition" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="BookItem" EntityType="Self.BookItem" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="BookTitle" EntityType="Self.BookTitle" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="BookTopic" EntityType="Self.BookTopic" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="EbookType" EntityType="Self.EbookType" Schema="dbo" store:Type="Tables" />
+          <AssociationSet Name="FK_BookAuthors_Author" Association="Self.FK_BookAuthors_Author">
+            <End Role="Author" EntitySet="Author" />
+            <End Role="BookAuthors" EntitySet="BookAuthors" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BookAuthors_BookEdition" Association="Self.FK_BookAuthors_BookEdition">
+            <End Role="BookEdition" EntitySet="BookEdition" />
+            <End Role="BookAuthors" EntitySet="BookAuthors" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BookEdition_BookTitle" Association="Self.FK_BookEdition_BookTitle">
+            <End Role="BookTitle" EntitySet="BookTitle" />
+            <End Role="BookEdition" EntitySet="BookEdition" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BookItem_BookEdition" Association="Self.FK_BookItem_BookEdition">
+            <End Role="BookEdition" EntitySet="BookEdition" />
+            <End Role="BookItem" EntitySet="BookItem" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BookItem_EbookType" Association="Self.FK_BookItem_EbookType">
+            <End Role="EbookType" EntitySet="EbookType" />
+            <End Role="BookItem" EntitySet="BookItem" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BookTitle_BookTopic" Association="Self.FK_BookTitle_BookTopic">
+            <End Role="BookTopic" EntitySet="BookTopic" />
+            <End Role="BookTitle" EntitySet="BookTitle" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BookTopic_BookTopic" Association="Self.FK_BookTopic_BookTopic">
+            <End Role="BookTopic" EntitySet="BookTopic" />
+            <End Role="BookTopic1" EntitySet="BookTopic" />
+          </AssociationSet>
+        </EntityContainer>
+      </Schema>
+    </edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="BookManagementModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+        <EntityType Name="Author">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Name" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+          <NavigationProperty Name="BookEditions" Relationship="Self.BookAuthors" FromRole="Author" ToRole="BookEdition" />
+        </EntityType>
+        <EntityType Name="BookEdition">
+          <Key>
+            <PropertyRef Name="Isbn" />
+          </Key>
+          <Property Name="Isbn" Type="String" MaxLength="13" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="TitleId" Type="Int32" Nullable="false" />
+          <Property Name="Edition" Type="Int16" />
+          <Property Name="Year" Type="Int16" />
+          <Property Name="Rating" Type="Decimal" Precision="10" Scale="4" />
+          <Property Name="Review" Type="Int16" />
+          <Property Name="Price" Type="Decimal" Precision="10" Scale="4" />
+          <Property Name="AmazonUrl" Type="String" MaxLength="512" FixedLength="false" Unicode="false" />
+          <NavigationProperty Name="BookTitle" Relationship="Self.FK_BookEdition_BookTitle" FromRole="BookEdition" ToRole="BookTitle" />
+          <NavigationProperty Name="BookItems" Relationship="Self.FK_BookItem_BookEdition" FromRole="BookEdition" ToRole="BookItem" />
+          <NavigationProperty Name="Authors" Relationship="Self.BookAuthors" FromRole="BookEdition" ToRole="Author" />
+        </EntityType>
+        <EntityType Name="BookItem">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Isbn" Type="String" MaxLength="13" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="EbookTypeId" Type="Int16" Nullable="false" />
+          <Property Name="FilePath" Type="String" MaxLength="512" FixedLength="false" Unicode="true" Nullable="false" />
+          <NavigationProperty Name="BookEdition" Relationship="Self.FK_BookItem_BookEdition" FromRole="BookItem" ToRole="BookEdition" />
+          <NavigationProperty Name="EbookType" Relationship="Self.FK_BookItem_EbookType" FromRole="BookItem" ToRole="EbookType" />
+        </EntityType>
+        <EntityType Name="BookTitle">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Title" Type="String" MaxLength="128" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="BookTopicId" Type="Int16" Nullable="false" />
+          <NavigationProperty Name="BookEditions" Relationship="Self.FK_BookEdition_BookTitle" FromRole="BookTitle" ToRole="BookEdition" />
+          <NavigationProperty Name="BookTopic" Relationship="Self.FK_BookTitle_BookTopic" FromRole="BookTitle" ToRole="BookTopic" />
+        </EntityType>
+        <EntityType Name="BookTopic">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int16" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Topic" Type="String" MaxLength="64" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="SuperTopicId" Type="Int16" />
+          <Property Name="FolderPath" Type="String" MaxLength="256" FixedLength="false" Unicode="true" Nullable="false" />
+          <NavigationProperty Name="BookTitles" Relationship="Self.FK_BookTitle_BookTopic" FromRole="BookTopic" ToRole="BookTitle" />
+          <NavigationProperty Name="SubTopics" Relationship="Self.FK_BookTopic_BookTopic" FromRole="BookTopic" ToRole="BookTopic1" />
+          <NavigationProperty Name="SuperTopic" Relationship="Self.FK_BookTopic_BookTopic" FromRole="BookTopic1" ToRole="BookTopic" />
+        </EntityType>
+        <EntityType Name="EbookType">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int16" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Type" Type="String" MaxLength="5" FixedLength="false" Unicode="true" Nullable="false" />
+          <NavigationProperty Name="BookItems" Relationship="Self.FK_BookItem_EbookType" FromRole="EbookType" ToRole="BookItem" />
+        </EntityType>
+        <Association Name="FK_BookEdition_BookTitle">
+          <End Role="BookTitle" Type="Self.BookTitle" Multiplicity="1" />
+          <End Role="BookEdition" Type="Self.BookEdition" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="BookTitle">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="BookEdition">
+              <PropertyRef Name="TitleId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BookItem_BookEdition">
+          <End Role="BookEdition" Type="Self.BookEdition" Multiplicity="1" />
+          <End Role="BookItem" Type="Self.BookItem" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="BookEdition">
+              <PropertyRef Name="Isbn" />
+            </Principal>
+            <Dependent Role="BookItem">
+              <PropertyRef Name="Isbn" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BookItem_EbookType">
+          <End Role="EbookType" Type="Self.EbookType" Multiplicity="1" />
+          <End Role="BookItem" Type="Self.BookItem" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="EbookType">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="BookItem">
+              <PropertyRef Name="EbookTypeId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BookTitle_BookTopic">
+          <End Role="BookTopic" Type="Self.BookTopic" Multiplicity="1" />
+          <End Role="BookTitle" Type="Self.BookTitle" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="BookTopic">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="BookTitle">
+              <PropertyRef Name="BookTopicId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BookTopic_BookTopic">
+          <End Role="BookTopic" Type="Self.BookTopic" Multiplicity="0..1" />
+          <End Role="BookTopic1" Type="Self.BookTopic" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="BookTopic">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="BookTopic1">
+              <PropertyRef Name="SuperTopicId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="BookAuthors">
+          <End Role="Author" Type="Self.Author" Multiplicity="*" />
+          <End Role="BookEdition" Type="Self.BookEdition" Multiplicity="*" />
+        </Association>
+        <EntityContainer Name="BookModel" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="Authors" EntityType="Self.Author" />
+          <EntitySet Name="BookEditions" EntityType="Self.BookEdition" />
+          <EntitySet Name="BookItems" EntityType="Self.BookItem" />
+          <EntitySet Name="BookTitles" EntityType="Self.BookTitle" />
+          <EntitySet Name="BookTopics" EntityType="Self.BookTopic" />
+          <EntitySet Name="EbookTypes" EntityType="Self.EbookType" />
+          <AssociationSet Name="FK_BookEdition_BookTitle" Association="Self.FK_BookEdition_BookTitle">
+            <End Role="BookTitle" EntitySet="BookTitles" />
+            <End Role="BookEdition" EntitySet="BookEditions" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BookItem_BookEdition" Association="Self.FK_BookItem_BookEdition">
+            <End Role="BookEdition" EntitySet="BookEditions" />
+            <End Role="BookItem" EntitySet="BookItems" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BookItem_EbookType" Association="Self.FK_BookItem_EbookType">
+            <End Role="EbookType" EntitySet="EbookTypes" />
+            <End Role="BookItem" EntitySet="BookItems" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BookTitle_BookTopic" Association="Self.FK_BookTitle_BookTopic">
+            <End Role="BookTopic" EntitySet="BookTopics" />
+            <End Role="BookTitle" EntitySet="BookTitles" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BookTopic_BookTopic" Association="Self.FK_BookTopic_BookTopic">
+            <End Role="BookTopic" EntitySet="BookTopics" />
+            <End Role="BookTopic1" EntitySet="BookTopics" />
+          </AssociationSet>
+          <AssociationSet Name="BookAuthors" Association="Self.BookAuthors">
+            <End Role="Author" EntitySet="Authors" />
+            <End Role="BookEdition" EntitySet="BookEditions" />
+          </AssociationSet>
+          <FunctionImport Name="DeleteAuthor">
+            <Parameter Name="id" Mode="In" Type="Int32" />
+          </FunctionImport>
+          <FunctionImport Name="DeleteBookEdition">
+            <Parameter Name="isbn" Mode="In" Type="String" />
+          </FunctionImport>
+          <FunctionImport Name="DeleteBookItem">
+            <Parameter Name="id" Mode="In" Type="Int32" />
+          </FunctionImport>
+          <FunctionImport Name="DeleteBookTitle">
+            <Parameter Name="id" Mode="In" Type="Int32" />
+          </FunctionImport>
+          <FunctionImport Name="DeleteBookTopic">
+            <Parameter Name="id" Mode="In" Type="Int16" />
+          </FunctionImport>
+          <FunctionImport Name="DeleteEbookType">
+            <Parameter Name="id" Mode="In" Type="Int16" />
+          </FunctionImport>
+          <FunctionImport Name="InsertAuthor" ReturnType="Collection(Decimal)">
+            <Parameter Name="name" Mode="In" Type="String" />
+          </FunctionImport>
+          <FunctionImport Name="InsertBookEdition">
+            <Parameter Name="isbn" Mode="In" Type="String" />
+            <Parameter Name="titleId" Mode="In" Type="Int32" />
+            <Parameter Name="edition" Mode="In" Type="Int16" />
+            <Parameter Name="year" Mode="In" Type="Int16" />
+            <Parameter Name="rating" Mode="In" Type="Decimal" />
+            <Parameter Name="review" Mode="In" Type="Int16" />
+            <Parameter Name="amazonUrl" Mode="In" Type="String" />
+          </FunctionImport>
+          <FunctionImport Name="InsertBookItem" ReturnType="Collection(Decimal)">
+            <Parameter Name="isbn" Mode="In" Type="String" />
+            <Parameter Name="ebookTypeId" Mode="In" Type="Int16" />
+            <Parameter Name="filePath" Mode="In" Type="String" />
+          </FunctionImport>
+          <FunctionImport Name="InsertBookTitle" ReturnType="Collection(Decimal)">
+            <Parameter Name="title" Mode="In" Type="String" />
+            <Parameter Name="bookTopicId" Mode="In" Type="Int16" />
+          </FunctionImport>
+          <FunctionImport Name="InsertBookTopic" ReturnType="Collection(Decimal)">
+            <Parameter Name="topic" Mode="In" Type="String" />
+            <Parameter Name="superTopicId" Mode="In" Type="Int16" />
+            <Parameter Name="folderPath" Mode="In" Type="String" />
+          </FunctionImport>
+          <FunctionImport Name="InsertEbookType" ReturnType="Collection(Decimal)">
+            <Parameter Name="type" Mode="In" Type="String" />
+          </FunctionImport>
+          <FunctionImport Name="UpdateAuthor">
+            <Parameter Name="id" Mode="In" Type="Int32" />
+            <Parameter Name="name" Mode="In" Type="String" />
+          </FunctionImport>
+          <FunctionImport Name="UpdateBookEdition">
+            <Parameter Name="isbn" Mode="In" Type="String" />
+            <Parameter Name="titleId" Mode="In" Type="Int32" />
+            <Parameter Name="edition" Mode="In" Type="Int16" />
+            <Parameter Name="year" Mode="In" Type="Int16" />
+            <Parameter Name="rating" Mode="In" Type="Decimal" />
+            <Parameter Name="review" Mode="In" Type="Int16" />
+            <Parameter Name="amazonUrl" Mode="In" Type="String" />
+          </FunctionImport>
+          <FunctionImport Name="UpdateBookItem">
+            <Parameter Name="id" Mode="In" Type="Int32" />
+            <Parameter Name="isbn" Mode="In" Type="String" />
+            <Parameter Name="ebookTypeId" Mode="In" Type="Int16" />
+            <Parameter Name="filePath" Mode="In" Type="String" />
+          </FunctionImport>
+          <FunctionImport Name="UpdateBookTitle">
+            <Parameter Name="id" Mode="In" Type="Int32" />
+            <Parameter Name="title" Mode="In" Type="String" />
+            <Parameter Name="bookTopicId" Mode="In" Type="Int16" />
+          </FunctionImport>
+          <FunctionImport Name="UpdateBookTopic">
+            <Parameter Name="id" Mode="In" Type="Int16" />
+            <Parameter Name="topic" Mode="In" Type="String" />
+            <Parameter Name="superTopicId" Mode="In" Type="Int16" />
+            <Parameter Name="folderPath" Mode="In" Type="String" />
+          </FunctionImport>
+          <FunctionImport Name="UpdateEbookType">
+            <Parameter Name="id" Mode="In" Type="Int16" />
+            <Parameter Name="type" Mode="In" Type="String" />
+          </FunctionImport>
+        </EntityContainer>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+        <EntityContainerMapping StorageEntityContainer="BookManagementModelStoreContainer" CdmEntityContainer="BookModel">
+          <EntitySetMapping Name="Authors">
+            <EntityTypeMapping TypeName="BookManagementModel.Author">
+              <MappingFragment StoreEntitySet="Author">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="BookEditions">
+            <EntityTypeMapping TypeName="BookManagementModel.BookEdition">
+              <MappingFragment StoreEntitySet="BookEdition">
+                <ScalarProperty Name="Isbn" ColumnName="Isbn" />
+                <ScalarProperty Name="TitleId" ColumnName="Title_Id" />
+                <ScalarProperty Name="Edition" ColumnName="Edition" />
+                <ScalarProperty Name="Year" ColumnName="Year" />
+                <ScalarProperty Name="Rating" ColumnName="Rating" />
+                <ScalarProperty Name="Review" ColumnName="Review" />
+                <ScalarProperty Name="Price" ColumnName="Price" />
+                <ScalarProperty Name="AmazonUrl" ColumnName="AmazonUrl" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="BookItems">
+            <EntityTypeMapping TypeName="BookManagementModel.BookItem">
+              <MappingFragment StoreEntitySet="BookItem">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Isbn" ColumnName="Isbn" />
+                <ScalarProperty Name="EbookTypeId" ColumnName="EbookType_Id" />
+                <ScalarProperty Name="FilePath" ColumnName="FilePath" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="BookTitles">
+            <EntityTypeMapping TypeName="BookManagementModel.BookTitle">
+              <MappingFragment StoreEntitySet="BookTitle">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Title" ColumnName="Title" />
+                <ScalarProperty Name="BookTopicId" ColumnName="BookTopic_Id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="BookTopics">
+            <EntityTypeMapping TypeName="BookManagementModel.BookTopic">
+              <MappingFragment StoreEntitySet="BookTopic">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Topic" ColumnName="Topic" />
+                <ScalarProperty Name="SuperTopicId" ColumnName="SuperTopic_Id" />
+                <ScalarProperty Name="FolderPath" ColumnName="FolderPath" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="EbookTypes">
+            <EntityTypeMapping TypeName="BookManagementModel.EbookType">
+              <MappingFragment StoreEntitySet="EbookType">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Type" ColumnName="Type" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <AssociationSetMapping Name="BookAuthors" TypeName="BookManagementModel.BookAuthors" StoreEntitySet="BookAuthors">
+            <EndProperty Name="Author">
+              <ScalarProperty Name="Id" ColumnName="Author_Id" />
+            </EndProperty>
+            <EndProperty Name="BookEdition">
+              <ScalarProperty Name="Isbn" ColumnName="Isbn" />
+            </EndProperty>
+          </AssociationSetMapping>
+          <FunctionImportMapping FunctionImportName="DeleteAuthor" FunctionName="BookManagementModel.Store.DeleteAuthor" />
+          <FunctionImportMapping FunctionImportName="DeleteBookEdition" FunctionName="BookManagementModel.Store.DeleteBookEdition" />
+          <FunctionImportMapping FunctionImportName="DeleteBookItem" FunctionName="BookManagementModel.Store.DeleteBookItem" />
+          <FunctionImportMapping FunctionImportName="DeleteBookTitle" FunctionName="BookManagementModel.Store.DeleteBookTitle" />
+          <FunctionImportMapping FunctionImportName="DeleteBookTopic" FunctionName="BookManagementModel.Store.DeleteBookTopic" />
+          <FunctionImportMapping FunctionImportName="DeleteEbookType" FunctionName="BookManagementModel.Store.DeleteEbookType" />
+          <FunctionImportMapping FunctionImportName="InsertAuthor" FunctionName="BookManagementModel.Store.InsertAuthor" />
+          <FunctionImportMapping FunctionImportName="InsertBookEdition" FunctionName="BookManagementModel.Store.InsertBookEdition" />
+          <FunctionImportMapping FunctionImportName="InsertBookItem" FunctionName="BookManagementModel.Store.InsertBookItem" />
+          <FunctionImportMapping FunctionImportName="InsertBookTitle" FunctionName="BookManagementModel.Store.InsertBookTitle" />
+          <FunctionImportMapping FunctionImportName="InsertBookTopic" FunctionName="BookManagementModel.Store.InsertBookTopic" />
+          <FunctionImportMapping FunctionImportName="InsertEbookType" FunctionName="BookManagementModel.Store.InsertEbookType" />
+          <FunctionImportMapping FunctionImportName="UpdateAuthor" FunctionName="BookManagementModel.Store.UpdateAuthor" />
+          <FunctionImportMapping FunctionImportName="UpdateBookEdition" FunctionName="BookManagementModel.Store.UpdateBookEdition" />
+          <FunctionImportMapping FunctionImportName="UpdateBookItem" FunctionName="BookManagementModel.Store.UpdateBookItem" />
+          <FunctionImportMapping FunctionImportName="UpdateBookTitle" FunctionName="BookManagementModel.Store.UpdateBookTitle" />
+          <FunctionImportMapping FunctionImportName="UpdateBookTopic" FunctionName="BookManagementModel.Store.UpdateBookTopic" />
+          <FunctionImportMapping FunctionImportName="UpdateEbookType" FunctionName="BookManagementModel.Store.UpdateEbookType" />
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="true" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="true" />
+        <DesignerProperty Name="UseLegacyProvider" Value="false" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams></Diagrams>
+  </Designer>
+</edmx:Edmx>
