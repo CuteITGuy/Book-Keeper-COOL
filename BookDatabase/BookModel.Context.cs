@@ -33,6 +33,7 @@ namespace BookDatabase
         public virtual DbSet<BookTitle> BookTitles { get; set; }
         public virtual DbSet<BookTopic> BookTopics { get; set; }
         public virtual DbSet<EbookType> EbookTypes { get; set; }
+        public virtual DbSet<Publisher> Publishers { get; set; }
     
         public virtual int DeleteAuthor(Nullable<int> id)
         {

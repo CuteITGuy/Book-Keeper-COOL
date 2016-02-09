@@ -1,88 +1,126 @@
 ﻿using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using BookDatabase;
+using CB.Model.Common;
+using CB.Primitives.Extensions;
 
 
 namespace AmazonSearcher
 {
-    public class AmazonBookInfo
+    public class AmazonBookInfo: ObservableObject
     {
+        #region Fields
+        private IEnumerable<string> _authors;
+        private int? _edition = 1;
+        private string _generalInfo;
+        private string _isbn;
+        private decimal? _price;
+        private string _publisher;
+        private decimal? _rating;
+        private int? _review;
+        private string _title;
+
+        private string _titleInfo;
+        private string _url;
+        private int? _year;
+        #endregion
+
+
         #region  Properties & Indexers
-        public IEnumerable<string> Authors { get; set; }
+        public IEnumerable<string> Authors
+        {
+            get { return _authors; }
+            set { SetProperty(ref _authors, value); }
+        }
 
-        public int? Edition { get; set; } = 1;
+        public int? Edition
+        {
+            get { return _edition; }
+            set { if (SetProperty(ref _edition, value)) SetInfos(); }
+        }
 
-        public string Isbn { get; set; }
+        public string GeneralInfo
+        {
+            get { return _generalInfo; }
+            private set { SetProperty(ref _generalInfo, value); }
+        }
 
-        public decimal? Price { get; set; }
+        public string Isbn
+        {
+            get { return _isbn; }
+            set { SetProperty(ref _isbn, value); }
+        }
 
-        public string Publisher { get; set; }
+        public decimal? Price
+        {
+            get { return _price; }
+            set { SetProperty(ref _price, value); }
+        }
 
-        public decimal? Rating { get; set; }
+        public string Publisher
+        {
+            get { return _publisher; }
+            set { SetProperty(ref _publisher, value); }
+        }
 
-        public int? Review { get; set; }
+        public decimal? Rating
+        {
+            get { return _rating; }
+            set { if (SetProperty(ref _rating, value)) SetInfos(); }
+        }
 
-        public string Title { get; set; }
+        public int? Review
+        {
+            get { return _review; }
+            set { if (SetProperty(ref _review, value)) SetInfos(); }
+        }
 
-        public string Url { get; set; }
+        public string Title
+        {
+            get { return _title; }
+            set { if (SetProperty(ref _title, value)) SetInfos(); }
+        }
 
-        public int? Year { get; set; }
+        public string TitleInfo
+        {
+            get { return _titleInfo; }
+            set { SetProperty(ref _titleInfo, value); }
+        }
+
+        public string Url
+        {
+            get { return _url; }
+            set { SetProperty(ref _url, value); }
+        }
+
+        public int? Year
+        {
+            get { return _year; }
+            set { if (SetProperty(ref _year, value)) SetInfos(); }
+        }
         #endregion
 
 
         #region Implementation
-        private static decimal? CaptureDecimal(string info, string pattern = @"(\d+(\.\d+)?)")
-        {
-            var capturedString = CaptureString(info, pattern);
-            return capturedString == null ? null : decimal.Parse(capturedString) as decimal?;
-        }
+        private static string CreateEditionText(int? edition)
+            => !edition.HasValue || edition.Value < 2 ? "" : $@" {NumberHandler.ToOrdinal(edition.Value)} edition";
 
-        private static int? CaptureInt(string info, string pattern = @"(\d+)")
-        {
-            var capturedString = CaptureString(info, pattern);
-            return capturedString == null ? null : int.Parse(capturedString) as int?;
-        }
+        private static string CreateRatingReviewText(decimal? rating, int? review)
+            => !rating.HasValue || !review.HasValue ? "" : $" ({rating}/{review})";
 
-        private static string CaptureString(string info, string pattern)
-        {
-            if (string.IsNullOrWhiteSpace(info)) return null;
-            var match = Regex.Match(info, pattern);
-            return match.Groups.Count < 2 ? null : match.Groups[1].Value;
-        }
+        private static string CreateTitleText(string title)
+            => string.IsNullOrEmpty(title)
+                   ? ""
+                   : title.RegexReplace(@"\s*[\:]\s*", " - ").RegexReplace(@"[<>?""'\\|]", "");
 
-        internal void ParseAuthorsInfo(string info)
-        {
-            Authors = string.IsNullOrWhiteSpace(info) ? null : Regex.Split(info, @"[,]");
-        }
+        private static string CreateYearText(int? year)
+            => !year.HasValue ? string.Empty : " " + year;
 
-        internal void ParseEditionInfo(string info)
+        private void SetInfos()
         {
-            Edition = CaptureInt(info);
-        }
-
-        internal void ParseIsbnInfo(string info)
-        {
-            Isbn = string.IsNullOrWhiteSpace(info) ? null : Regex.Replace(info, @"\D", "");
-        }
-
-        internal void ParsePriceInfo(string info)
-        {
-            Price = CaptureDecimal(info);
-        }
-
-        internal void ParsePublisherInfo(string info)
-        {
-            Publisher = CaptureString(info, @"^Publisher: (.+);?(?: \()?");
-            Year = CaptureInt(info, @"(\d{4})\)$");
-        }
-
-        internal void ParseRatingInfo(string info)
-        {
-            Rating = CaptureDecimal(info, @"(\d(?:\.\d)?) out of 5 stars");
-        }
-
-        internal void ParseReviewInfo(string info)
-        {
-            Review = CaptureInt(info);
+            TitleInfo = $"{CreateTitleText(Title)}{CreateEditionText(Edition)}{CreateYearText(Year)}";
+            GeneralInfo =
+                $"{Title}{CreateEditionText(Edition)}{CreateYearText(Year)}{CreateRatingReviewText(Rating, Review)}";
         }
         #endregion
     }

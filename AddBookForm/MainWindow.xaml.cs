@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using AmazonSearcher;
 using BookDatabase;
 
 
@@ -16,8 +17,9 @@ namespace AddBookForm
     {
         #region Fields
         private readonly List<Button> _addCmdButtons;
-        private readonly Queue<string> _fileQueue = new Queue<string>();
         private readonly BookModel _bookDbContext = new BookModel();
+        private readonly Queue<string> _fileQueue = new Queue<string>();
+        private string _lastClipboardText;
         #endregion
 
 
@@ -40,11 +42,44 @@ namespace AddBookForm
         #endregion
 
 
+        #region Override
+        protected override void OnActivated(EventArgs e)
+        {
+            base.OnActivated(e);
+            if (!Clipboard.ContainsText()) return;
+
+            var clipboardText = Clipboard.GetText();
+            if (clipboardText.Equals(_lastClipboardText)) return;
+            _lastClipboardText = clipboardText;
+
+            if (!WantToSearchBook(clipboardText)) return;
+            SearchBook(clipboardText);
+        }
+        #endregion
+
+
         #region Event Handlers
+        private void AmazonSearch_OnBookInfoSent(object sender, BookInfoEventArgs e)
+        {
+            txtTitle.Text = e.Info.Title;
+        }
+
         private void CmdAddAuthor_OnClick(object sender, RoutedEventArgs e)
         {
             var author = ctnNewAuthor.DataContext as Author;
             AddOrRemoveSelectedAuthor(author);
+        }
+
+        private void CmdGoAmazonIsbn_OnClick(object sender, RoutedEventArgs e)
+        {
+            var isbn = txtIsbn.Text;
+            SearchBook(isbn);
+        }
+
+        private void CmdGoAmazonTitle_OnClick(object sender, RoutedEventArgs e)
+        {
+            var title = txtTitle.Text;
+            SearchBook(title);
         }
 
         private void LstAuthorsButtons_OnClick(object sender, RoutedEventArgs e)
@@ -72,10 +107,21 @@ namespace AddBookForm
             UpdateFolderPath();
         }
 
+        private void MainWindow_OnDrop(object sender, DragEventArgs e)
+        {
+            var dropItems = e.Data.GetData(DataFormats.FileDrop, true) as string[];
+            if (dropItems != null)
+            {
+                QueueFiles(dropItems);
+            }
+        }
+
         private async void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
         {
             await BindData();
         }
+
+        private void MainWindow_OnPreviewDragEnter(object sender, DragEventArgs e) { }
 
         private void TxtIsbn_OnPaste(object sender, DataObjectPastingEventArgs e)
         {
@@ -96,7 +142,7 @@ namespace AddBookForm
 
         #region Implementation
         private async Task<TItem> AddDbItem<TItem>(FrameworkElement dataContextContainer, IDbSet<TItem> dbSet)
-            where TItem : class, new()
+            where TItem: class, new()
         {
             var item = dataContextContainer.DataContext as TItem;
             if (!await AddDbItem(item, dbSet)) return null;
@@ -105,7 +151,7 @@ namespace AddBookForm
             return item;
         }
 
-        private async Task<bool> AddDbItem<TItem>(TItem item, IDbSet<TItem> dbSet) where TItem : class
+        private async Task<bool> AddDbItem<TItem>(TItem item, IDbSet<TItem> dbSet) where TItem: class
         {
             try
             {
@@ -161,16 +207,20 @@ namespace AddBookForm
             _addCmdButtons.ForEach(btn => btn.IsEnabled = false);
             await BindData(_bookDbContext.BookItems, ctnNewBookItem, cmdAddBookItem, null);
             await BindData(_bookDbContext.EbookTypes, ctnNewEbookType, cmdAddEbookType, tglEbookType, lstEbookTypes);
-            await BindData(_bookDbContext.BookEditions, ctnNewBookEdition, cmdAddBookEdition, tglBookEdition, lstBookEditions);
+            await
+                BindData(_bookDbContext.BookEditions, ctnNewBookEdition, cmdAddBookEdition, tglBookEdition,
+                    lstBookEditions);
             await BindData(_bookDbContext.BookTitles, ctnNewBookTitle, cmdAddBookTitle, tglBookTitle, lstBookTitles);
-            await BindData(_bookDbContext.BookTopics, ctnNewBookTopic, cmdAddBookTopic, tglBookTopic, lstBookTopics, lstSuperTopics);
+            await
+                BindData(_bookDbContext.BookTopics, ctnNewBookTopic, cmdAddBookTopic, tglBookTopic, lstBookTopics,
+                    lstSuperTopics);
             await BindData(_bookDbContext.Authors, ctnNewAuthor, cmdAddAuthor, tglAuthor, lstAuthors);
             _addCmdButtons.ForEach(btn => btn.IsEnabled = true);
         }
 
         private async Task BindData<TItem>(IDbSet<TItem> dbSet, FrameworkElement newItemContainer,
             ButtonBase addItemButton, ToggleButton expandToggleButton, params Selector[] itemsContainers)
-            where TItem : class, new()
+            where TItem: class, new()
         {
             await dbSet.LoadAsync();
             foreach (var itemsContainer in itemsContainers)
@@ -199,6 +249,40 @@ namespace AddBookForm
             };
         }
 
+        private void HandleNextFile()
+        {
+            var nextFile = _fileQueue.Dequeue();
+        }
+
+        private void QueueFiles(IEnumerable<string> fileSystemEntries)
+        {
+            foreach (var entry in fileSystemEntries)
+            {
+                if (File.Exists(entry))
+                {
+                    _fileQueue.Enqueue(entry);
+                }
+                else if (Directory.Exists(entry))
+                {
+                    QueueFiles(Directory.EnumerateFileSystemEntries(entry));
+                }
+            }
+        }
+
+        private async void SearchBook(string search)
+        {
+            var amazonSearch = new AmazonSearcher.MainWindow
+            {
+                WindowState = WindowState.Maximized
+            };
+            amazonSearch.BookInfoSent += AmazonSearch_OnBookInfoSent;
+            amazonSearch.Show();
+            //amazonSearch.SearchBook(search);
+            await amazonSearch.SearchBook(search);
+            amazonSearch.Activate();
+            WindowState = WindowState.Minimized;
+        }
+
         private void UpdateFilePath()
         {
             var bookItem = ctnNewBookItem.DataContext as BookItem;
@@ -210,62 +294,24 @@ namespace AddBookForm
             var bookTopic = ctnNewBookTopic.DataContext as BookTopic;
             txtFolderPath.Text = bookTopic?.SuggestFolderPath();
         }
+
+        private bool WantToSearchBook(string search)
+        {
+            return MessageBox.Show($"Do you want to search for {search}?", Title, MessageBoxButton.YesNo) ==
+                   MessageBoxResult.Yes;
+        }
         #endregion
-
-
-        private void MainWindow_OnPreviewDragEnter(object sender, DragEventArgs e)
-        {
-
-        }
-
-        private void MainWindow_OnDrop(object sender, DragEventArgs e)
-        {
-            var dropItems = e.Data.GetData(DataFormats.FileDrop, true) as string[];
-            if (dropItems != null)
-            {
-                QueueFiles(dropItems);
-            }
-        }
-
-        private void QueueFiles(IEnumerable<string> fileSystemEntries)
-        {
-            foreach (var entry in fileSystemEntries)
-            {
-                if (File.Exists(entry))
-                {
-                    _fileQueue.Enqueue(entry);
-                }
-                else if(Directory.Exists(entry))
-                {
-                    QueueFiles(Directory.EnumerateFileSystemEntries(entry));
-                }
-            }
-        }
-
-        private void HandleNextFile()
-        {
-            var nextFile = _fileQueue.Dequeue();
-        }
-
-        private void CmdGoAmazonIsbn_OnClick(object sender, RoutedEventArgs e)
-        {
-            var amazonSearch = new AmazonSearcher.MainWindow();
-            amazonSearch.BookInfoSent += AmazonSearch_OnBookInfoSent;
-            amazonSearch.Show();
-            amazonSearch.SearchBookIsbn(txtIsbn.Text);
-        }
-
-        private void AmazonSearch_OnBookInfoSent(object sender, AmazonSearcher.BookInfoEventArgs e)
-        {
-            txtTitle.Text = e.Info.Title;
-        }
     }
 }
 
 
+//TODO: Stored Procedures: Map
 //TODO: Stored Procedures Delete, Update: Foreign Key Check: Edit
 //TODO: ComboBoxItem DataTemplate: Button Add: Test
 //TODO: ListBoxItem DataTemplate: Button Remove: Test
 //TODO: Asynchronous Data Load: Test
 //TODO: Go Amazon: ISBN & Title: Implement
 //TODO: BookEdition Model: Add Price Property
+//TODO: Read PDF to find ISBN
+//TODO: GeneralInfo not replace
+//TODO: right time to check Clipboard

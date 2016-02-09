@@ -7,7 +7,7 @@
         xmlns:wpf="clr-namespace:CefSharp.Wpf;assembly=CefSharp.Wpf"
         xmlns:xaml="http://wpf.cb.com/xaml"
         mc:Ignorable="d"
-        Title="MainWindow" Height="700" Width="600" FontSize="13">
+        Title="Amazon Searcher" Height="700" Width="600" FontSize="13" Icon="amazon.ico">
 
     <Window.Resources>
         <xaml:ObjectsToStringConverter x:Key="ObjectsConverter" Separator=", " />
@@ -87,6 +87,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <Grid.ColumnDefinitions>
@@ -107,42 +108,42 @@
             <!--Input URL-->
             <TextBlock Grid.Row="0" Grid.Column="0" Text="Url:" />
             <TextBox x:Name="txtUrl" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="11"
-                     Text="{Binding Url}" />
+                     Text="{Binding Url, UpdateSourceTrigger=PropertyChanged}" />
 
             <!--Input Title-->
             <TextBlock Grid.Row="1" Grid.Column="0" Text="Title:" />
             <TextBox x:Name="txtTitle" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="9"
-                     Text="{Binding Title}" />
+                     Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" />
 
             <!--Input Edition-->
             <TextBlock Grid.Row="1" Grid.Column="10" Text="Edition:" />
             <TextBox x:Name="txtEdition" Grid.Row="1" Grid.Column="11"
-                     Text="{Binding Edition}" />
+                     Text="{Binding Edition, UpdateSourceTrigger=PropertyChanged}" />
 
             <!--Input Rating-->
             <TextBlock Grid.Row="2" Grid.Column="0" Text="Rating:" />
             <TextBox x:Name="txtRating" Grid.Row="2" Grid.Column="1"
-                     Text="{Binding Rating}" />
+                     Text="{Binding Rating, UpdateSourceTrigger=PropertyChanged}" />
 
             <!--Input Review-->
             <TextBlock Grid.Row="2" Grid.Column="2" Text="Review:" />
             <TextBox x:Name="txtReview" Grid.Row="2" Grid.Column="3"
-                     Text="{Binding Review}" />
+                     Text="{Binding Review, UpdateSourceTrigger=PropertyChanged}" />
 
             <!--Input Price-->
             <TextBlock Grid.Row="2" Grid.Column="4" Text="Price:" />
             <TextBox x:Name="txtPrice" Grid.Row="2" Grid.Column="5"
-                     Text="{Binding Price}" />
+                     Text="{Binding Price, UpdateSourceTrigger=PropertyChanged}" />
 
             <!--Input Year-->
             <TextBlock Grid.Row="2" Grid.Column="6" Text="Year:" />
             <TextBox x:Name="txtYear" Grid.Row="2" Grid.Column="7"
-                     Text="{Binding Year}" />
+                     Text="{Binding Year, UpdateSourceTrigger=PropertyChanged}" />
 
             <!--Input ISBN-->
             <TextBlock Grid.Row="2" Grid.Column="8" Text="ISBN:" />
             <TextBox x:Name="txtIsbn" Grid.Row="2" Grid.Column="9" Grid.ColumnSpan="3"
-                     Text="{Binding Isbn}" />
+                     Text="{Binding Isbn, UpdateSourceTrigger=PropertyChanged}" />
 
             <!--Input Author-->
             <TextBlock Grid.Row="3" Grid.Column="0" Text="Aurhor:" />
@@ -152,7 +153,24 @@
             <!--Input Publisher-->
             <TextBlock Grid.Row="3" Grid.Column="6" Text="Publisher:" />
             <TextBox x:Name="txtPublisher" Grid.Row="3" Grid.Column="7" Grid.ColumnSpan="5"
-                     Text="{Binding Publisher}" />
+                     Text="{Binding Publisher, UpdateSourceTrigger=PropertyChanged}" />
+
+            <!--Input General Info-->
+            <TextBlock Grid.Row="4" Grid.Column="0" Text="Info:" />
+            <TextBox x:Name="txtInfo" Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="10"
+                     Text="{Binding GeneralInfo}" />
+            <Grid Grid.Row="4" Grid.Column="11">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+
+                <Button x:Name="cmdCopyTitle" Grid.Column="0" MinWidth="0"
+                        Content="&gt;&lt;" ToolTip="Copy title only" Click="CmdCopyTitle_OnClick" />
+
+                <Button x:Name="cmdCopyAll" Grid.Column="1" MinWidth="0"
+                        Content="&lt;&gt;" ToolTip="Copy full info" Click="CmdCopyAll_OnClick" />
+            </Grid>
         </Grid>
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center">

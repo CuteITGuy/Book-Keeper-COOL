@@ -17,6 +17,8 @@
         <AssociationConnector Association="BookManagementModel.FK_BookTitle_BookTopic" ManuallyRouted="false" />
         <AssociationConnector Association="BookManagementModel.FK_BookTopic_BookTopic" ManuallyRouted="false" />
         <AssociationConnector Association="BookManagementModel.BookAuthors" ManuallyRouted="false" />
+        <EntityTypeShape EntityType="BookManagementModel.Publisher" Width="1.5" PointX="0.75" PointY="5.875" />
+        <AssociationConnector Association="BookManagementModel.FK_BookTitle_Publisher" />
       </Diagram>
     </edmx:Diagrams>
   </edmx:Designer>

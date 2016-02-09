@@ -99,6 +99,7 @@
     <Compile Include="BookModelPartial\BookTitle.cs" />
     <Compile Include="BookModelPartial\BookTopic.cs" />
     <Compile Include="BookModelPartial\EbookType.cs" />
+    <Compile Include="BookModelPartial\NumberHandler.cs" />
     <Compile Include="BookTitle.cs">
       <DependentUpon>BookModel.tt</DependentUpon>
     </Compile>
@@ -109,6 +110,9 @@
       <DependentUpon>BookModel.tt</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Publisher.cs">
+      <DependentUpon>BookModel.tt</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

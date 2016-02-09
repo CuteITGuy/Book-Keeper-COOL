@@ -1,8 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
+using AngleSharp.Dom;
 using CefSharp;
+using HtmlHandling;
+using Visibility = System.Windows.Visibility;
 
 
 namespace AmazonSearcher
@@ -10,24 +15,17 @@ namespace AmazonSearcher
     public partial class MainWindow
     {
         #region Fields
+        private const string FIRST_SEARCH_RESULT_SELECTOR = "#result_0 a.s-access-detail-page";
+
         private const string SEARCH_URL =
             "http://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Dstripbooks&field-keywords=";
-
-        private const string TITLE_SELECTOR = "#productTitle",
-                             EDITION_SELECTOR = "#bookEdition",
-                             AUTHORS_SELECTOR =
-                                 ".author.notFaded > a.a-link-normal, .author.notFaded > span > a.a-link-normal",
-                             RATING_SELECTOR = ".a-icon.a-icon-star span",
-                             REVIEW_SELECTOR = "#acrCustomerReviewText",
-                             PRICE_SELECTOR = ".a-size-medium.a-color-price",
-                             ISBN_SELECTOR_1 = "span:contains(ISBN-13) + span",
-                             ISBN_SELECTOR_2 = "#detail-bullets li:has(b:contains(ISBN-13:))",
-                             PUBLISHER_SELECTOR = "#detail-bullets li:has(b:contains(Publisher:))";
 
         public static readonly RoutedEvent BookInfoSentEvent = EventManager.RegisterRoutedEvent(
             nameof(BookInfoSent), RoutingStrategy.Bubble, typeof(BookInfoEventHandler), typeof(MainWindow));
 
-        private readonly TimeSpan _timeout = TimeSpan.FromSeconds(2);
+        private readonly AmazonBookPageParser _amazonParser = new AmazonBookPageParser();
+
+        private readonly HtmlHandler _htmlHandler = new HtmlHandler();
         #endregion
 
 
@@ -49,25 +47,37 @@ namespace AmazonSearcher
 
 
         #region Methods
-        public void SearchBookIsbn(string isbn)
+        public async Task SearchBook(string search, bool autoGotoFirstResult = true)
         {
-            if (string.IsNullOrEmpty(isbn)) return;
-
-            var searchStr = SEARCH_URL + isbn;
-            SearchString(searchStr);
-        }
-
-        public void SearchBookTitle(string title)
-        {
-            if (string.IsNullOrEmpty(title)) return;
-
-            var searchStr = SEARCH_URL + Regex.Replace(title, @"\s+", "+");
-            SearchString(searchStr);
+            var targetAddress = CreateSearchAddress(search);
+            if (autoGotoFirstResult)
+            {
+                var firstResultAddress = await GetFirstSearchResultAddress(targetAddress);
+                if (!string.IsNullOrEmpty(firstResultAddress))
+                {
+                    targetAddress = firstResultAddress;
+                }
+            }
+            NavigateTo(targetAddress);
         }
         #endregion
 
 
         #region Event Handlers
+        private void CmdCopyAll_OnClick(object sender, RoutedEventArgs e)
+        {
+            var bookInfo = GetBookInfoContext();
+            if (bookInfo == null) return;
+            Clipboard.SetText(bookInfo.GeneralInfo);
+        }
+
+        private void CmdCopyTitle_OnClick(object sender, RoutedEventArgs e)
+        {
+            var bookInfo = GetBookInfoContext();
+            if (bookInfo == null) return;
+            Clipboard.SetText(bookInfo.TitleInfo);
+        }
+
         private void CmdExpand_OnClick(object sender, RoutedEventArgs e)
         {
             if (pnlExpand.Visibility == Visibility.Collapsed)
@@ -112,67 +122,98 @@ namespace AmazonSearcher
 
 
         #region Implementation
-        private static string CreateScript(string selector)
+        private static string CreateIsbnSearchString(string isbn) => isbn;
+
+        private static string CreateSearchAddress(string search)
         {
-            return $"var ele = jQuery(\"{selector}\")[0]; ele && ele.textContent;";
-            /*return $"jQuery(\"{selector}\")[0].textContent;";*/
+            var searchString = CreateSearchString(search);
+            return string.IsNullOrEmpty(searchString) ? "" : SEARCH_URL + searchString;
         }
+
+        private static string CreateSearchString(string search)
+            => string.IsNullOrEmpty(search)
+                   ? ""
+                   : IsIsbn(search)
+                         ? CreateIsbnSearchString(search)
+                         : CreateTitleSearchString(search);
+
+        private static string CreateTitleSearchString(string title) => Regex.Replace(title, @"\s+", "+");
+
+        /*private async Task<AmazonBookInfo> FetchBookInfo(string address)
+        {
+            var bookInfo = await FetchBookInfo(address);
+            pnlBookInfo.DataContext = bookInfo;
+            return bookInfo;
+        }*/
 
         private async Task<AmazonBookInfo> FetchBookInfo()
         {
-            var bookInfo = await GetBookInfo();
+            var bookInfo = await _amazonParser.FetchBookInfo(webMain);
             pnlBookInfo.DataContext = bookInfo;
             return bookInfo;
         }
 
-        private async Task<string> GetAuthorsInfo()
+        /*private async Task<AmazonBookInfo> FetchBookInfo(string address)
         {
-            var script = $"var eles = jQuery(\"{AUTHORS_SELECTOR}\");" +
-                         "Array.prototype.join.call(eles.map(function(ele) { return this.textContent; } ), \",\");";
-            return (await webMain.EvaluateScriptAsync(script, _timeout)).Result as string;
-        }
-
-        private async Task<AmazonBookInfo> GetBookInfo()
-        {
+            await _htmlHandler.ParseAddress(address);
             var bookInfo = new AmazonBookInfo
             {
-                Url = webMain.Address,
-                Title = await GetElementText(TITLE_SELECTOR)
+                Url = address,
+                Title = GetElementContent(TITLE_SELECTOR),
+                Authors = GetElementContents(AUTHORS_SELECTOR)
             };
-            bookInfo.ParseEditionInfo(await GetElementText(EDITION_SELECTOR));
-            bookInfo.ParseRatingInfo(await GetElementText(RATING_SELECTOR));
-            bookInfo.ParseReviewInfo(await GetElementText(REVIEW_SELECTOR));
-            bookInfo.ParsePriceInfo(await GetElementText(PRICE_SELECTOR));
-            bookInfo.ParsePublisherInfo(await GetElementText(PUBLISHER_SELECTOR));
-            var isbnInfo = await GetElementText(ISBN_SELECTOR_1);
-            if (string.IsNullOrWhiteSpace(isbnInfo)) isbnInfo = await GetElementText(ISBN_SELECTOR_2);
-            bookInfo.ParseIsbnInfo(isbnInfo);
-            bookInfo.ParseAuthorsInfo(await GetAuthorsInfo());
+            bookInfo.ParseEditionInfo(GetElementContent(EDITION_SELECTOR));
+            bookInfo.ParsePriceInfo(GetElementContent(PRICE_SELECTOR));
+            bookInfo.ParsePublisherInfo(GetElementContent(PUBLISHER_SELECTOR));
+            bookInfo.ParseRatingInfo(GetElementContent(RATING_SELECTOR));
+            bookInfo.ParseReviewInfo(GetElementContent(REVIEW_SELECTOR));
+            bookInfo.ParseIsbnInfo(GetElementContent($"{ISBN_SELECTOR_1},{ISBN_SELECTOR_2}"));
             return bookInfo;
+        }*/
+
+        private AmazonBookInfo GetBookInfoContext() => pnlBookInfo.DataContext as AmazonBookInfo;
+
+        private string GetElementContent(string selector, Func<IElement, bool> predicate = null)
+        {
+            var element = _htmlHandler.SelectAll(selector, predicate).FirstOrDefault();
+            return element == null ? "" : element.TextContent;
         }
 
-        private async Task<string> GetElementText(string selector)
+        private IEnumerable<string> GetElementContents(string selector)
         {
-            var script = CreateScript(selector);
+            var elements = _htmlHandler.SelectAll(selector);
+            return elements.Select(e => e.TextContent);
+        }
+
+        private async Task<string> GetFirstSearchResultAddress(string searchAddress)
+        {
+            if (string.IsNullOrEmpty(searchAddress)) return null;
+
+            await _htmlHandler.ParseAddress(searchAddress);
+            var firstResult = _htmlHandler.SelectAnchor(FIRST_SEARCH_RESULT_SELECTOR);
+            return firstResult?.Href;
+        }
+
+        /*private async Task<string> GetFirstSearchResultUrl()
+        {
+            var script = $"$(\"{FIRST_SEARCH_RESULT_SELECTOR}\").href";
             return (await webMain.EvaluateScriptAsync(script, _timeout)).Result as string;
+        }*/
+
+        private static bool IsIsbn(string text)
+            => Regex.IsMatch(text, @"^(\d-?){10}$") || Regex.IsMatch(text, @"^(\d-?){13}$");
+
+        private void NavigateTo(string address)
+        {
+            if (string.IsNullOrWhiteSpace(address)) return;
+            webMain.Address = address;
         }
 
         protected virtual void OnBookSelected(AmazonBookInfo info)
-        {
-            RaiseEvent(new BookInfoEventArgs(BookInfoSentEvent, this, info));
-        }
+            => RaiseEvent(new BookInfoEventArgs(BookInfoSentEvent, this, info));
 
         private async Task<object> RunScript(string script)
-        {
-            return (await webMain.EvaluateScriptAsync(script, _timeout)).Result;
-        }
-
-        private void SearchString(string searchStr)
-        {
-            if (string.IsNullOrWhiteSpace(searchStr)) return;
-
-            webMain.Address = searchStr;
-        }
+            => (await webMain.EvaluateScriptAsync(script, null)).Result;
 
         private void SendBookInfo()
         {
@@ -184,31 +225,6 @@ namespace AmazonSearcher
         {
             txtResult.Text = result?.ToString();
         }
-        #endregion
-    }
-
-    public delegate void BookInfoEventHandler(object sender, BookInfoEventArgs e);
-
-    public class BookInfoEventArgs
-        : RoutedEventArgs
-
-    {
-        #region  Constructors & Destructor
-        public BookInfoEventArgs() { }
-
-        public BookInfoEventArgs(AmazonBookInfo info): this(null, null, info) { }
-
-        public BookInfoEventArgs(RoutedEvent routedEvent, AmazonBookInfo info): this(routedEvent, null, info) { }
-
-        public BookInfoEventArgs(RoutedEvent routedEvent, object source, AmazonBookInfo info): base(routedEvent, source)
-        {
-            Info = info;
-        }
-        #endregion
-
-
-        #region  Properties & Indexers
-        public AmazonBookInfo Info { get; set; }
         #endregion
     }
 }
