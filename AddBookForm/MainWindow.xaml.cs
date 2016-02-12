@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Configuration;
 using System.Data.Entity;
+using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -16,8 +19,16 @@ namespace AddBookForm
     public partial class MainWindow
     {
         #region Fields
+        private const string CLOSE_COMMAND = "close";
+        private const string ISBN_CAPTURE = @"(?i)isbn[\D]+([\d-]+)";
+        private const string OPEN_COMMAND = "open";
+        private const string SQLSERVER = "sqlServer";
+
+        private const string SQLSERVER_PROCESS =
+            @"F:\C#\ServiceCommander\ServiceCommander\bin\Release\ServiceCommander.exe";
+
         private readonly List<Button> _addCmdButtons;
-        private readonly BookModel _bookDbContext = new BookModel();
+        private BookModel _bookDbContext;
         private readonly Queue<string> _fileQueue = new Queue<string>();
         private string _lastClipboardText;
         #endregion
@@ -43,7 +54,7 @@ namespace AddBookForm
 
 
         #region Override
-        protected override void OnActivated(EventArgs e)
+        protected override async void OnActivated(EventArgs e)
         {
             base.OnActivated(e);
             if (!Clipboard.ContainsText()) return;
@@ -52,8 +63,14 @@ namespace AddBookForm
             if (clipboardText.Equals(_lastClipboardText)) return;
             _lastClipboardText = clipboardText;
 
-            if (!WantToSearchBook(clipboardText)) return;
-            SearchBook(clipboardText);
+            if (!DoWantToSearchBook(clipboardText)) return;
+            await SearchBookAsync(clipboardText);
+        }
+
+        protected override async void OnClosing(CancelEventArgs e)
+        {
+            base.OnClosing(e);
+            await HandleSqlServerServiceAsync(CLOSE_COMMAND);
         }
         #endregion
 
@@ -70,16 +87,16 @@ namespace AddBookForm
             AddOrRemoveSelectedAuthor(author);
         }
 
-        private void CmdGoAmazonIsbn_OnClick(object sender, RoutedEventArgs e)
+        private async void CmdGoAmazonIsbn_OnClick(object sender, RoutedEventArgs e)
         {
             var isbn = txtIsbn.Text;
-            SearchBook(isbn);
+            await SearchBookAsync(isbn);
         }
 
-        private void CmdGoAmazonTitle_OnClick(object sender, RoutedEventArgs e)
+        private async void CmdGoAmazonTitle_OnClick(object sender, RoutedEventArgs e)
         {
             var title = txtTitle.Text;
-            SearchBook(title);
+            await SearchBookAsync(title);
         }
 
         private void LstAuthorsButtons_OnClick(object sender, RoutedEventArgs e)
@@ -107,21 +124,28 @@ namespace AddBookForm
             UpdateFolderPath();
         }
 
-        private void MainWindow_OnDrop(object sender, DragEventArgs e)
+        private async void MainWindow_OnDrop(object sender, DragEventArgs e)
         {
-            var dropItems = e.Data.GetData(DataFormats.FileDrop, true) as string[];
+            /*var dropItems = e.Data.GetData(DataFormats.FileDrop, true) as string[];
             if (dropItems != null)
             {
                 QueueFiles(dropItems);
-            }
+            }*/
+
+            var files = e.Data.GetData(DataFormats.FileDrop, true) as string[];
+            if (files == null || files.Length == 0) return;
+
+            var file = files[0];
+            OpenFile(file);
+            await SearchFileInfoAsync(file);
         }
 
         private async void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
         {
-            await BindData();
+            await HandleSqlServerServiceAsync(OPEN_COMMAND);
+            _bookDbContext = new BookModel();
+            await BindDataAsync();
         }
-
-        private void MainWindow_OnPreviewDragEnter(object sender, DragEventArgs e) { }
 
         private void TxtIsbn_OnPaste(object sender, DataObjectPastingEventArgs e)
         {
@@ -201,24 +225,26 @@ namespace AddBookForm
             }
         }
 
-        private async Task BindData()
+        private async Task BindDataAsync()
         {
             txtQueue.DataContext = _fileQueue;
             _addCmdButtons.ForEach(btn => btn.IsEnabled = false);
-            await BindData(_bookDbContext.BookItems, ctnNewBookItem, cmdAddBookItem, null);
-            await BindData(_bookDbContext.EbookTypes, ctnNewEbookType, cmdAddEbookType, tglEbookType, lstEbookTypes);
+            await BindDataAsync(_bookDbContext.BookItems, ctnNewBookItem, cmdAddBookItem, null);
             await
-                BindData(_bookDbContext.BookEditions, ctnNewBookEdition, cmdAddBookEdition, tglBookEdition,
+                BindDataAsync(_bookDbContext.EbookTypes, ctnNewEbookType, cmdAddEbookType, tglEbookType, lstEbookTypes);
+            await
+                BindDataAsync(_bookDbContext.BookEditions, ctnNewBookEdition, cmdAddBookEdition, tglBookEdition,
                     lstBookEditions);
-            await BindData(_bookDbContext.BookTitles, ctnNewBookTitle, cmdAddBookTitle, tglBookTitle, lstBookTitles);
             await
-                BindData(_bookDbContext.BookTopics, ctnNewBookTopic, cmdAddBookTopic, tglBookTopic, lstBookTopics,
+                BindDataAsync(_bookDbContext.BookTitles, ctnNewBookTitle, cmdAddBookTitle, tglBookTitle, lstBookTitles);
+            await
+                BindDataAsync(_bookDbContext.BookTopics, ctnNewBookTopic, cmdAddBookTopic, tglBookTopic, lstBookTopics,
                     lstSuperTopics);
-            await BindData(_bookDbContext.Authors, ctnNewAuthor, cmdAddAuthor, tglAuthor, lstAuthors);
+            await BindDataAsync(_bookDbContext.Authors, ctnNewAuthor, cmdAddAuthor, tglAuthor, lstAuthors);
             _addCmdButtons.ForEach(btn => btn.IsEnabled = true);
         }
 
-        private async Task BindData<TItem>(IDbSet<TItem> dbSet, FrameworkElement newItemContainer,
+        private async Task BindDataAsync<TItem>(IDbSet<TItem> dbSet, FrameworkElement newItemContainer,
             ButtonBase addItemButton, ToggleButton expandToggleButton, params Selector[] itemsContainers)
             where TItem: class, new()
         {
@@ -249,9 +275,61 @@ namespace AddBookForm
             };
         }
 
+        private async Task CloseSqlServerAsync()
+        {
+            /*if (_sqlServerService.Controller.Status != ServiceControllerStatus.Stopped
+                && DoWantToCloseServer() && !await _sqlServerService.StopAsync(_sqlServerServiceTimeout))
+                MessageBox.Show("Cannot close SQL Server service. Please close it manually!", Title);*/
+        }
+
+        private bool DoWantTo(string content)
+            => MessageBox.Show(content, Title, MessageBoxButton.YesNo) == MessageBoxResult.Yes;
+
+        private bool DoWantToCloseServer()
+            => DoWantTo("SQL Server service is still running. Do you want to stop the service?");
+
+        private bool DoWantToOpenServer()
+            => DoWantTo("SQL Server service is not running. Do you want to start the service?");
+
+        private bool DoWantToSearchBook(string search)
+            => DoWantTo($"Do you want to search for {search}?");
+
+        private static string GetSqlServerServiceName()
+        {
+            return ConfigurationManager.AppSettings[SQLSERVER];
+        }
+
         private void HandleNextFile()
         {
             var nextFile = _fileQueue.Dequeue();
+        }
+
+        private static void HandleSqlServerService(string command)
+        {
+            var sqlServerProcess = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = SQLSERVER_PROCESS,
+                    Arguments = $"{command} {GetSqlServerServiceName()}",
+                    Verb = "runas"
+                }
+            };
+            sqlServerProcess.Start();
+            sqlServerProcess.WaitForExit();
+        }
+
+        private static async Task HandleSqlServerServiceAsync(string command)
+        {
+            /*if (_sqlServerService.Controller.Status != ServiceControllerStatus.Running
+                && DoWantToOpenServer() && !await _sqlServerService.StartAsync(_sqlServerServiceTimeout))
+                MessageBox.Show("Cannot open SQL Server service. Please open it manually!", Title);*/
+            await Task.Run(() => HandleSqlServerService(command));
+        }
+
+        private static void OpenFile(string filePath)
+        {
+            Process.Start(filePath);
         }
 
         private void QueueFiles(IEnumerable<string> fileSystemEntries)
@@ -269,7 +347,7 @@ namespace AddBookForm
             }
         }
 
-        private async void SearchBook(string search)
+        private async Task SearchBookAsync(string search)
         {
             var amazonSearch = new AmazonSearcher.MainWindow
             {
@@ -277,10 +355,21 @@ namespace AddBookForm
             };
             amazonSearch.BookInfoSent += AmazonSearch_OnBookInfoSent;
             amazonSearch.Show();
-            //amazonSearch.SearchBook(search);
+
+            //amazonSearch.SearchBookAsync(search);
             await amazonSearch.SearchBook(search);
             amazonSearch.Activate();
             WindowState = WindowState.Minimized;
+        }
+
+        private async Task SearchFileInfoAsync(string filePath)
+        {
+            using (var textFinder = new TextFinder(filePath))
+            {
+                var isbnMatch = await textFinder.FindAsync(ISBN_CAPTURE);
+                var search = isbnMatch?.Groups[1].Value ?? Path.GetFileNameWithoutExtension(filePath);
+                await SearchBookAsync(search);
+            }
         }
 
         private void UpdateFilePath()
@@ -294,13 +383,11 @@ namespace AddBookForm
             var bookTopic = ctnNewBookTopic.DataContext as BookTopic;
             txtFolderPath.Text = bookTopic?.SuggestFolderPath();
         }
-
-        private bool WantToSearchBook(string search)
-        {
-            return MessageBox.Show($"Do you want to search for {search}?", Title, MessageBoxButton.YesNo) ==
-                   MessageBoxResult.Yes;
-        }
         #endregion
+
+
+        /*private readonly Service _sqlServerService = new Service(GetSqlServerServiceName());
+        private readonly TimeSpan _sqlServerServiceTimeout = TimeSpan.FromSeconds(8);*/
     }
 }
 

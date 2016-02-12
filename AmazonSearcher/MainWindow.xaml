@@ -166,17 +166,22 @@
                 </Grid.ColumnDefinitions>
 
                 <Button x:Name="cmdCopyTitle" Grid.Column="0" MinWidth="0"
-                        Content="&gt;&lt;" ToolTip="Copy title only" Click="CmdCopyTitle_OnClick" />
+                        Content="&gt;&lt;" ToolTip="Copy title only" TabIndex="3"
+                        Click="CmdCopyTitle_OnClick" />
 
                 <Button x:Name="cmdCopyAll" Grid.Column="1" MinWidth="0"
-                        Content="&lt;&gt;" ToolTip="Copy full info" Click="CmdCopyAll_OnClick" />
+                        Content="&lt;&gt;" ToolTip="Copy full info" TabIndex="4"
+                        Click="CmdCopyAll_OnClick" />
             </Grid>
         </Grid>
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center">
-            <Button x:Name="cmdFetch" Content="Fetch" Click="CmdFetch_OnClick" />
-            <Button x:Name="cmdAccept" Content="Send" Click="CmdSend_OnClick" />
-            <Button x:Name="cmdAcceptClose" Content="Send &amp; Close" Click="CmdSendClose_OnClick" />
+            <Button x:Name="cmdFetch" Content="Fetch" TabIndex="0"
+                    Click="CmdFetch_OnClick" />
+            <Button x:Name="cmdAccept" Content="Send" TabIndex="1"
+                    Click="CmdSend_OnClick" />
+            <Button x:Name="cmdAcceptClose" Content="Send &amp; Close" TabIndex="2"
+                    Click="CmdSendClose_OnClick" />
         </StackPanel>
     </Grid>
 </Window>

@@ -13,7 +13,9 @@ namespace AmazonSearcher
             ".author.notFaded > a.a-link-normal, .author.notFaded > span > a.a-link-normal";
 
         private const string DECIMAL_CAPTURE = @"(\d+(\.\d+)?)";
+        private const string EDITION_CAPTURE = @"(?i)(\d+)(?:\w{2})? edition";
         private const string EDITION_SELECTOR = "#bookEdition";
+        private const string INTEGER_CAPTURE = @"(\d+)";
         private const string ISBN_SELECTOR_1 = "span:contains(ISBN-13) + span";
         private const string ISBN_SELECTOR_2 = "#detail-bullets li:contains(ISBN-13:)";
         private const string PRICE_SELECTOR = ".a-size-medium.a-color-price";
@@ -59,7 +61,7 @@ namespace AmazonSearcher
             return capturedString == null ? null : decimal.Parse(capturedString) as decimal?;
         }
 
-        private static int? CaptureInt(string info, string pattern = @"(\d+)")
+        private static int? CaptureInt(string info, string pattern = INTEGER_CAPTURE)
         {
             var capturedString = CaptureString(info, pattern);
             return capturedString == null ? null : int.Parse(capturedString) as int?;
@@ -85,7 +87,8 @@ namespace AmazonSearcher
 
         private async Task<int?> GetBookEdition()
         {
-            return CaptureInt(await GetElementText(EDITION_SELECTOR));
+            return CaptureInt(await GetElementText(EDITION_SELECTOR)) ??
+                   CaptureInt(await GetElementText(PUBLISHER_SELECTOR), EDITION_CAPTURE);
         }
 
         private async Task<string> GetBookIsbn()
