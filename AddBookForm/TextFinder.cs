@@ -6,35 +6,36 @@ using System.Threading.Tasks;
 
 namespace AddBookForm
 {
-    public class TextFinder: TextFinderBase
+    public class TextFinder: IFindText, IDisposable
     {
         #region Fields
+        private readonly string _filePath;
+        private readonly string _password;
         private TextFinderBase _textFinder;
         #endregion
 
 
         #region  Constructors & Destructor
-        public TextFinder(string filePath, string password): base(filePath, password)
+        public TextFinder(string filePath, string password)
         {
+            _filePath = filePath;
+            _password = password;
             InitializeTextFinder();
         }
 
-        public TextFinder(string filePath): base(filePath)
-        {
-            InitializeTextFinder();
-        }
+        public TextFinder(string filePath): this(filePath, null) { }
         #endregion
 
 
-        #region Override
-        public override void Dispose()
+        #region Methods
+        public void Dispose()
         {
             _textFinder?.Dispose();
         }
 
-        public override Match Find(string pattern) => _textFinder.Find(pattern);
+        public Match Find(string pattern) => _textFinder.Find(pattern);
 
-        public override async Task<Match> FindAsync(string pattern) => await _textFinder.FindAsync(pattern);
+        public async Task<Match> FindAsync(string pattern) => await _textFinder.FindAsync(pattern);
         #endregion
 
 
@@ -45,7 +46,10 @@ namespace AddBookForm
             switch (extension)
             {
                 case ".pdf":
-                    _textFinder = new PdfTextFinder(_filePath);
+                    _textFinder = new PdfTextFinder(_filePath, _password);
+                    break;
+                case ".epub":
+                    _textFinder = new EpubTextFinder(_filePath, _password);
                     break;
                 default:
                     throw new Exception();
@@ -54,3 +58,5 @@ namespace AddBookForm
         #endregion
     }
 }
+
+//TODO: MobiTextFinder, Azw3TextFinder

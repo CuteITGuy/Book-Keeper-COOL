@@ -38,7 +38,7 @@ namespace AmazonSearcher
             _webMain = webMain;
             var bookInfo = new AmazonBookInfo
             {
-                Url = webMain.Address,
+                //Url = webMain.Address,
                 Title = await GetBookTitle(),
                 Edition = await GetBookEdition(),
                 Rating = await GetBookRating(),

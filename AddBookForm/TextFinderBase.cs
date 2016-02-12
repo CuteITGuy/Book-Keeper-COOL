@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -29,11 +31,21 @@ namespace AddBookForm
 
         #region Abstract
         public abstract void Dispose();
-        public abstract Match Find(string pattern);
+
+        protected abstract IEnumerable<string> GetContents(string pattern);
+        protected abstract void LoadFile();
         #endregion
 
 
         #region Methods
+        public virtual Match Find(string pattern)
+        {
+            LoadFile();
+            var contents = GetContents(pattern);
+            return contents?.Select(content => Regex.Match(content, pattern))
+                            .FirstOrDefault(match => match.Success);
+        }
+
         public virtual async Task<Match> FindAsync(string pattern)
             => await Task.Run(() => Find(pattern));
         #endregion

@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
-using AngleSharp.Dom;
 using CefSharp;
 using HtmlHandling;
-using Visibility = System.Windows.Visibility;
 
 
 namespace AmazonSearcher
@@ -60,6 +55,7 @@ namespace AmazonSearcher
             }
             NavigateTo(targetAddress);
         }
+        
         #endregion
 
 
@@ -94,7 +90,7 @@ namespace AmazonSearcher
 
         private async void CmdFetch_OnClick(object sender, RoutedEventArgs e)
         {
-            await FetchBookInfo();
+            await FetchBookInfoAsync();
         }
 
         private void CmdGo_OnClick(object sender, RoutedEventArgs e)
@@ -118,6 +114,12 @@ namespace AmazonSearcher
             SendBookInfo();
             Close();
         }
+
+        private async void WebMain_LoadingStateChanged(object sender, LoadingStateChangedEventArgs e)
+        {
+            if (e.IsLoading) return;
+            await FetchBookInfoAsync();
+        }
         #endregion
 
 
@@ -139,51 +141,16 @@ namespace AmazonSearcher
 
         private static string CreateTitleSearchString(string title) => Regex.Replace(title, @"\s+", "+");
 
-        /*private async Task<AmazonBookInfo> FetchBookInfo(string address)
+        private async Task FetchBookInfoAsync()
         {
-            var bookInfo = await FetchBookInfo(address);
-            pnlBookInfo.DataContext = bookInfo;
-            return bookInfo;
-        }*/
-
-        private async Task<AmazonBookInfo> FetchBookInfo()
-        {
-            var bookInfo = await _amazonParser.FetchBookInfo(webMain);
-            pnlBookInfo.DataContext = bookInfo;
-            return bookInfo;
-        }
-
-        /*private async Task<AmazonBookInfo> FetchBookInfo(string address)
-        {
-            await _htmlHandler.ParseAddress(address);
-            var bookInfo = new AmazonBookInfo
+            await Dispatcher.InvokeAsync(async () =>
             {
-                Url = address,
-                Title = GetElementContent(TITLE_SELECTOR),
-                Authors = GetElementContents(AUTHORS_SELECTOR)
-            };
-            bookInfo.ParseEditionInfo(GetElementContent(EDITION_SELECTOR));
-            bookInfo.ParsePriceInfo(GetElementContent(PRICE_SELECTOR));
-            bookInfo.ParsePublisherInfo(GetElementContent(PUBLISHER_SELECTOR));
-            bookInfo.ParseRatingInfo(GetElementContent(RATING_SELECTOR));
-            bookInfo.ParseReviewInfo(GetElementContent(REVIEW_SELECTOR));
-            bookInfo.ParseIsbnInfo(GetElementContent($"{ISBN_SELECTOR_1},{ISBN_SELECTOR_2}"));
-            return bookInfo;
-        }*/
+                var bookInfo = await _amazonParser.FetchBookInfo(webMain);
+                pnlBookInfo.DataContext = bookInfo;
+            });
+        }
 
         private AmazonBookInfo GetBookInfoContext() => pnlBookInfo.DataContext as AmazonBookInfo;
-
-        private string GetElementContent(string selector, Func<IElement, bool> predicate = null)
-        {
-            var element = _htmlHandler.SelectAll(selector, predicate).FirstOrDefault();
-            return element == null ? "" : element.TextContent;
-        }
-
-        private IEnumerable<string> GetElementContents(string selector)
-        {
-            var elements = _htmlHandler.SelectAll(selector);
-            return elements.Select(e => e.TextContent);
-        }
 
         private async Task<string> GetFirstSearchResultAddress(string searchAddress)
         {
@@ -193,12 +160,6 @@ namespace AmazonSearcher
             var firstResult = _htmlHandler.SelectAnchor(FIRST_SEARCH_RESULT_SELECTOR);
             return firstResult?.Href;
         }
-
-        /*private async Task<string> GetFirstSearchResultUrl()
-        {
-            var script = $"$(\"{FIRST_SEARCH_RESULT_SELECTOR}\").href";
-            return (await webMain.EvaluateScriptAsync(script, _timeout)).Result as string;
-        }*/
 
         private static bool IsIsbn(string text)
             => Regex.IsMatch(text, @"^(\d-?){10}$") || Regex.IsMatch(text, @"^(\d-?){13}$");

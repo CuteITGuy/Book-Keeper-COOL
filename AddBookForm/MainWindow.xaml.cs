@@ -20,7 +20,7 @@ namespace AddBookForm
     {
         #region Fields
         private const string CLOSE_COMMAND = "close";
-        private const string ISBN_CAPTURE = @"(?i)isbn[\D]+([\d-]+)";
+        private const string ISBN_CAPTURE = @"(?i)isbn(?:-13|-10)?[\D]+([\d-]+)";
         private const string OPEN_COMMAND = "open";
         private const string SQLSERVER = "sqlServer";
 
@@ -275,21 +275,8 @@ namespace AddBookForm
             };
         }
 
-        private async Task CloseSqlServerAsync()
-        {
-            /*if (_sqlServerService.Controller.Status != ServiceControllerStatus.Stopped
-                && DoWantToCloseServer() && !await _sqlServerService.StopAsync(_sqlServerServiceTimeout))
-                MessageBox.Show("Cannot close SQL Server service. Please close it manually!", Title);*/
-        }
-
         private bool DoWantTo(string content)
             => MessageBox.Show(content, Title, MessageBoxButton.YesNo) == MessageBoxResult.Yes;
-
-        private bool DoWantToCloseServer()
-            => DoWantTo("SQL Server service is still running. Do you want to stop the service?");
-
-        private bool DoWantToOpenServer()
-            => DoWantTo("SQL Server service is not running. Do you want to start the service?");
 
         private bool DoWantToSearchBook(string search)
             => DoWantTo($"Do you want to search for {search}?");

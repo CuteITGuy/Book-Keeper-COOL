@@ -45,7 +45,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <wpf:ChromiumWebBrowser x:Name="webMain" Grid.Row="0" />
+        <wpf:ChromiumWebBrowser x:Name="webMain" Grid.Row="0" LoadingStateChanged="WebMain_LoadingStateChanged" />
 
         <Button x:Name="cmdExpand" Grid.Row="0" Content="+" FontSize="6"
                 Margin="0,0,0,-6" Padding="0"
